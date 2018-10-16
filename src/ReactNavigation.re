@@ -15,7 +15,8 @@ module Navigation = {
   type t = {state: NavigationState.t};
 
   [@bs.send] external navigate: (t, string) => unit = "";
-  [@bs.send] external navigateWithParams: (t, string, Js.t({..})) => unit = "navigate";
+  [@bs.send]
+  external navigateWithParams: (t, string, Js.t({..})) => unit = "navigate";
   [@bs.send] external pop: (t, unit) => unit = "";
   [@bs.send] external openDrawer: (t, unit) => unit = "";
   [@bs.send] external getParam: (t, string, 'a) => 'a = "";
@@ -33,14 +34,17 @@ module StackNavigator = {
     };
   };
 
-  [@bs.module "react-navigation"] external make: Js.t('a) => ReasonReact.reactClass = "createStackNavigator";
+  [@bs.module "react-navigation"]
+  external make: Js.t('a) => ReasonReact.reactClass = "createStackNavigator";
 
   [@bs.module "react-navigation"]
-  external makeWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass = "createStackNavigator";
+  external makeWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass =
+    "createStackNavigator";
 };
 
 module DrawerNavigator = {
-  [@bs.module "react-navigation"] external drawerItemsClass: ReasonReact.reactClass = "DrawerItems";
+  [@bs.module "react-navigation"]
+  external drawerItemsClass: ReasonReact.reactClass = "DrawerItems";
 
   module Config = {
     module ContentOptions = {
@@ -78,10 +82,12 @@ module DrawerNavigator = {
     };
   };
 
-  [@bs.module "react-navigation"] external make: Js.t('a) => ReasonReact.reactClass = "createDrawerNavigator";
+  [@bs.module "react-navigation"]
+  external make: Js.t('a) => ReasonReact.reactClass = "createDrawerNavigator";
 
   [@bs.module "react-navigation"]
-  external makeWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass = "createDrawerNavigator";
+  external makeWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass =
+    "createDrawerNavigator";
 };
 
 module TabNavigator = {
@@ -137,10 +143,12 @@ module TabNavigator = {
   };
 
   [@bs.module "react-navigation"]
-  external makeMaterialTopNavigator: Js.t('a) => ReasonReact.reactClass = "createMaterialTopTabNavigator";
+  external makeMaterialTopNavigator: Js.t('a) => ReasonReact.reactClass =
+    "createMaterialTopTabNavigator";
 
   [@bs.module "react-navigation"]
-  external makeMaterialTopNavigatorWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass =
+  external makeMaterialTopNavigatorWithConfig:
+    (Js.t('a), Config.t) => ReasonReact.reactClass =
     "createMaterialTopTabNavigator";
 };
 
@@ -191,7 +199,12 @@ module NavigationParams = {
   };
 };
 
-[@bs.set] external setNavigationOptions: (ReasonReact.reactClass, NavigationOptions.t) => unit = "navigationOptions";
 [@bs.set]
-external setDynamicNavigationOptions: (ReasonReact.reactClass, NavigationParams.t('a) => NavigationOptions.t) => unit =
+external setNavigationOptions:
+  (ReasonReact.reactClass, NavigationOptions.t) => unit =
+  "navigationOptions";
+[@bs.set]
+external setDynamicNavigationOptions:
+  (ReasonReact.reactClass, NavigationParams.t('a) => NavigationOptions.t) =>
+  unit =
   "navigationOptions";
