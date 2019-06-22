@@ -1,7 +1,7 @@
-open BsReactNative;
+open ReactNative;
 
 module NavigationState = {
-  [@bs.deriving abstract]
+  [@bs.deriving {abstract: light}]
   type t = {
     index: int,
     [@bs.optional]
@@ -10,8 +10,39 @@ module NavigationState = {
   };
 };
 
+module NavigationActions = {
+  type action;
+
+  [@bs.deriving {abstract: light}]
+  type navigateParams = {
+    routeName: string,
+    [@bs.optional]
+    params: Js.t({.}),
+  };
+
+  [@bs.deriving {abstract: light}]
+  type backParams = {
+    [@bs.optional]
+    key: string,
+    [@bs.optional]
+    immediate: bool,
+  };
+
+  [@bs.module "react-navigation"] [@bs.scope "NavigationActions"]
+  external navigate: navigateParams => action = "";
+
+  [@bs.module "react-navigation"] [@bs.scope "NavigationActions"]
+  external back: backParams => action = "";
+};
+
+module NavigationContainer = {
+  type t;
+
+  [@bs.send] external dispatch: (t, NavigationActions.action) => unit = "";
+};
+
 module Navigation = {
-  [@bs.deriving abstract]
+  [@bs.deriving {abstract: light}]
   type t = {state: NavigationState.t};
 
   [@bs.send] external navigate: (t, string) => unit = "";
@@ -22,9 +53,12 @@ module Navigation = {
   [@bs.send] external getParam: (t, string, 'a) => 'a = "";
 };
 
+type navigatorProps;
+type navigator = React.component(navigatorProps);
+
 module StackNavigator = {
   module Config = {
-    [@bs.deriving abstract]
+    [@bs.deriving {abstract: light}]
     type t = {
       [@bs.optional]
       mode: string, /* "card" or "modal" */
@@ -35,38 +69,63 @@ module StackNavigator = {
   };
 
   [@bs.module "react-navigation"]
-  external make: Js.t('a) => ReasonReact.reactClass = "createStackNavigator";
+  external make: Js.t('a) => navigator = "createStackNavigator";
 
   [@bs.module "react-navigation"]
-  external makeWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass =
+  external makeWithConfig: (Js.t('a), Config.t) => navigator =
     "createStackNavigator";
 };
 
 module DrawerNavigator = {
+  module ContentComponent = {
+    [@bs.deriving {abstract: light}]
+    type props('screenProps) = {
+      navigation: Navigation.t,
+      screenProps: 'screenProps,
+    };
+
+    type t('screenProps) = React.component(props('screenProps));
+  };
+
   [@bs.module "react-navigation"]
-  external drawerItemsClass: ReasonReact.reactClass = "DrawerItems";
+  external drawerItems: ContentComponent.t('screenProps) = "DrawerItems";
 
   module Config = {
     module ContentOptions = {
-      [@bs.deriving abstract]
+      [@bs.deriving {abstract: light}]
       type t = {
         [@bs.optional]
         activeTintColor: string,
         [@bs.optional]
         activeBackgroundColor: string,
         [@bs.optional]
-        style: Style.t,
+        inactiveTintColor: string,
+        [@bs.optional]
+        inactiveBackgroundColor: string,
+        /* onItemPress(route) - function to be invoked when an item is pressed */
+        [@bs.optional]
+        itemsContainerStyle: Style.t,
+        [@bs.optional]
+        itemStyle: Style.t,
+        [@bs.optional]
+        labelStyle: Style.t,
+        [@bs.optional]
+        activeLabelStyle: Style.t,
+        [@bs.optional]
+        inactiveLabelStyle: Style.t,
+        [@bs.optional]
+        iconContainerStyle: Style.t,
       };
     };
 
-    [@bs.deriving abstract]
-    type t = {
+    [@bs.deriving {abstract: light}]
+    type t('screenProps) = {
       [@bs.optional]
       drawerWidth: float,
       [@bs.optional]
       drawerPosition: string, /* "left" or "right" */
       [@bs.optional]
-      contentComponent: ReasonReact.reactClass,
+      contentComponent: ContentComponent.t('screenProps),
       [@bs.optional]
       contentOptions: ContentOptions.t,
       [@bs.optional]
@@ -83,16 +142,16 @@ module DrawerNavigator = {
   };
 
   [@bs.module "react-navigation"]
-  external make: Js.t('a) => ReasonReact.reactClass = "createDrawerNavigator";
+  external make: Js.t('a) => navigator = "createDrawerNavigator";
 
   [@bs.module "react-navigation"]
-  external makeWithConfig: (Js.t('a), Config.t) => ReasonReact.reactClass =
+  external makeWithConfig: (Js.t('a), Config.t('screenProps)) => navigator =
     "createDrawerNavigator";
 };
 
 module TabNavigator = {
   module TabBarOptions = {
-    [@bs.deriving abstract]
+    [@bs.deriving {abstract: light}]
     type t = {
       [@bs.optional]
       activeTintColor: string,
@@ -126,7 +185,7 @@ module TabNavigator = {
   };
 
   module Config = {
-    [@bs.deriving abstract]
+    [@bs.deriving {abstract: light}]
     type t = {
       [@bs.optional]
       backBehavior: string,
@@ -143,23 +202,23 @@ module TabNavigator = {
   };
 
   [@bs.module "react-navigation"]
-  external makeMaterialTopNavigator: Js.t('a) => ReasonReact.reactClass =
+  external makeMaterialTopNavigator: Js.t('a) => navigator =
     "createMaterialTopTabNavigator";
 
   [@bs.module "react-navigation"]
   external makeMaterialTopNavigatorWithConfig:
-    (Js.t('a), Config.t) => ReasonReact.reactClass =
+    (Js.t('a), Config.t) => navigator =
     "createMaterialTopTabNavigator";
 };
 
 module NavigationOptions = {
-  [@bs.deriving abstract]
+  [@bs.deriving {abstract: light}]
   type t = {
     [@bs.optional]
     title: string,
-    /* header: option [ | `custom (headerProps => ReasonReact.reactElement) | `notVisible], */
+    /* header: option [ | `custom (headerProps => React.element) | `notVisible], */
     [@bs.optional]
-    headerTitle: ReasonReact.reactElement,
+    headerTitle: React.element,
     [@bs.optional]
     headerTitleStyle: Style.t,
     [@bs.optional]
@@ -169,42 +228,54 @@ module NavigationOptions = {
     [@bs.optional]
     headerTruncatedBackTitle: string,
     [@bs.optional]
-    headerLeft: ReasonReact.reactElement,
+    headerLeft: React.element,
     [@bs.optional]
     headerBackTitleStyle: Style.t,
     [@bs.optional]
     headerPressColorAndroid: string,
     [@bs.optional]
-    headerRight: ReasonReact.reactElement,
+    headerRight: React.element,
     [@bs.optional]
     headerStyle: Style.t,
     [@bs.optional]
     gesturesEnabled: bool,
     /* Drawer Navigator */
     [@bs.optional]
-    drawerIcon: ReasonReact.reactElement,
+    drawerIcon: React.element,
     [@bs.optional]
-    drawerLabel: ReasonReact.reactElement,
+    drawerLabel: string,
+    /* {
+         .
+         "focused": bool,
+         "tintColor": string,
+       } =>
+       React.element, */
     [@bs.optional]
     drawerLockMode: string /* unlocked | locked-closed | locked-open */
   };
 };
-
 module NavigationParams = {
-  [@bs.deriving abstract]
-  type t('a) = {
+  [@bs.deriving {abstract: light}]
+  type t('screenProps) = {
     navigation: Navigation.t,
     navigationOptions: NavigationOptions.t,
-    screenProps: 'a,
+    screenProps: 'screenProps,
   };
+};
+
+module AppContainer = {
+  type props;
+
+  [@bs.module "react-navigation"]
+  external make: navigator => React.component(props) = "createAppContainer";
 };
 
 [@bs.set]
 external setNavigationOptions:
-  (ReasonReact.reactClass, NavigationOptions.t) => unit =
+  (React.component('props), NavigationOptions.t) => unit =
   "navigationOptions";
 [@bs.set]
 external setDynamicNavigationOptions:
-  (ReasonReact.reactClass, NavigationParams.t('a) => NavigationOptions.t) =>
+  (React.component('props), NavigationParams.t('a) => NavigationOptions.t) =>
   unit =
   "navigationOptions";

@@ -11,25 +11,18 @@ WIP WIP WIP WIP
 A screen component with dynamic navigation options (Screen1.re):
 
 ```reason
-open BsReactNative;
+open ReactNative;
 open ReactNavigation;
 
-let component = ReasonReact.statelessComponent(__MODULE__);
-
-let make = (~navigation, ~screenProps, _children) => {
-  ...component,
-  render: _self => <Text> {ReasonReact.string("Hello world!")} </Text>,
+[@react.component]
+let make = (~navigation, ~screenProps) => {
+  <Text> {React.string("Hello world!")} </Text>,
 };
 
-let reactClass =
-  ReasonReact.wrapReasonForJs(~component, jsProps =>
-    make(~navigation=jsProps##navigation, ~screenProps=jsProps##screenProps, [||])
-  );
-
-reactClass->setDynamicNavigationOptions(params => {
-  let navigation = params->NavigationParams.navigationGet;
-  let navigationOptions = params->NavigationParams.navigationOptionsGet;
-  let screenProps = params->NavigationParams.screenPropsGet;
+make->setDynamicNavigationOptions(params => {
+  let navigation = params->NavigationParams.navigation;
+  let navigationOptions = params->NavigationParams.navigationOptions;
+  let screenProps = params->NavigationParams.screenProps;
 
   /* More properties can be set dynamically based on navigation, navigationOptions or screenProps. */
   NavigationOptions.t(~title="Screen 1", ~headerTintColor="red", ());
@@ -42,12 +35,12 @@ Using it:
 open ReactNavigation;
 
 let routes = {
-  "Screen1": Screen1.reactClass,
-  "Screen2": Screen2.reactClass,
-  "Screen3": Screen3.reactClass,
+  "Screen1": Screen1.make,
+  "Screen2": Screen2.make,
+  "Screen3": Screen3.make,
 };
 
-let reactClass = StackNavigator.make(routes);
+let navigator = StackNavigator.make(routes);
 
-reactClass->setNavigationOptions(NavigationOptions.t(~gesturesEnabled=false, ()));
+navigator->setNavigationOptions(NavigationOptions.t(~gesturesEnabled=false, ()));
 ```
