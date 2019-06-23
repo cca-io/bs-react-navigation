@@ -1,6 +1,6 @@
 {
   "name": "bs-react-navigation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reason bindings for react-navigation",
   "main": "index.js",
   "scripts": {
