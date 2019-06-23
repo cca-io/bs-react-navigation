@@ -1,281 +1,324 @@
 open ReactNative;
 
-module NavigationState = {
-  [@bs.deriving {abstract: light}]
-  type t = {
-    index: int,
-    [@bs.optional]
-    routes: array(t),
-    isDrawerOpen: bool,
-  };
-};
+module Make = (S: {type screenProps;}) => {
+  type screenProps = S.screenProps;
 
-module NavigationActions = {
-  type action;
-
-  [@bs.deriving {abstract: light}]
-  type navigateParams = {
-    routeName: string,
-    [@bs.optional]
-    params: Js.t({.}),
+  type navigationState = {
+    .
+    "index": int,
+    "routes": option(array(navigationState)),
+    "isDrawerOpen": bool,
   };
 
-  [@bs.deriving {abstract: light}]
-  type backParams = {
-    [@bs.optional]
-    key: string,
-    [@bs.optional]
-    immediate: bool,
+  module NavigationActions = {
+    type action;
+
+    type navigateParams;
+
+    [@bs.obj]
+    external navigateParams:
+      (~routeName: string, ~params: Js.t({..})=?, unit) => navigateParams =
+      "";
+
+    type backParams;
+
+    [@bs.obj]
+    external backParams:
+      (~key: string=?, ~immediate: bool=?, unit) => navigateParams =
+      "";
+
+    [@bs.module "react-navigation"] [@bs.scope "NavigationActions"]
+    external navigate: navigateParams => action = "";
+
+    [@bs.module "react-navigation"] [@bs.scope "NavigationActions"]
+    external back: backParams => action = "";
   };
 
-  [@bs.module "react-navigation"] [@bs.scope "NavigationActions"]
-  external navigate: navigateParams => action = "";
+  module NavigationContainer = {
+    type t;
 
-  [@bs.module "react-navigation"] [@bs.scope "NavigationActions"]
-  external back: backParams => action = "";
-};
+    [@bs.send] external dispatch: (t, NavigationActions.action) => unit = "";
+  };
 
-module NavigationContainer = {
-  type t;
+  module Navigation = {
+    type t;
 
-  [@bs.send] external dispatch: (t, NavigationActions.action) => unit = "";
-};
+    [@bs.get] external state: t => navigationState = "";
 
-module Navigation = {
-  [@bs.deriving {abstract: light}]
-  type t = {state: NavigationState.t};
+    [@bs.send] external navigate: (t, string) => unit = "";
+    [@bs.send]
+    external navigateWithParams: (t, string, Js.t({..})) => unit = "navigate";
+    [@bs.send] external goBack: t => unit = "";
+    [@bs.send] external goBackToRoute: (t, string) => unit = "";
+    [@bs.send] external getParam: (t, string, 'a) => 'a = "";
+    // TODO: addListener, setParams, ...
+    // Stack Actions
+    // TODO: push, replace, ...
+    [@bs.send] external pop: t => unit = "";
+    [@bs.send] external popN: (t, int) => unit = "";
+    [@bs.send] external popToTop: t => unit = "";
+    // Drawer navigator only
+    [@bs.send] external openDrawer: t => unit = "";
+    [@bs.send] external closeDrawer: t => unit = "";
+    [@bs.send] external toggleDrawer: t => unit = "";
+  };
 
-  [@bs.send] external navigate: (t, string) => unit = "";
-  [@bs.send]
-  external navigateWithParams: (t, string, Js.t({..})) => unit = "navigate";
-  [@bs.send] external pop: (t, unit) => unit = "";
-  [@bs.send] external openDrawer: (t, unit) => unit = "";
-  [@bs.send] external getParam: (t, string, 'a) => 'a = "";
-};
+  type navigatorProps;
+  type navigator = React.component(navigatorProps);
 
-type navigatorProps;
-type navigator = React.component(navigatorProps);
+  module StackNavigator = {
+    type config;
 
-module StackNavigator = {
-  module Config = {
+    [@bs.obj]
+    external config:
+      (
+        ~mode: [@bs.string] [ | `card | `modal]=?,
+        ~headerMode: [@bs.string] [ | `float | `screen | `none]=?,
+        ~headerBackTitleVisible: bool=?,
+        ~headerTransitionPreset: [@bs.string] [
+                                   | [@bs.as "fade-in-place"] `fadeInPlace
+                                   | `uikit
+                                 ]
+                                   =?,
+        ~headerLayoutPreset: [@bs.string] [ | `left | `center]=?,
+        ~cardStyle: Style.t=?,
+        ~cardShadowEnabled: bool=?,
+        ~cardOverlayEnabled: bool=?,
+        // TODO: many more props
+        unit
+      ) =>
+      config =
+      "";
+
+    [@bs.module "react-navigation"]
+    external make: Js.t('a) => navigator = "createStackNavigator";
+
+    [@bs.module "react-navigation"]
+    external makeWithConfig: (Js.t('a), config) => navigator =
+      "createStackNavigator";
+  };
+
+  module DrawerNavigator = {
+    type contentComponentProps = {
+      .
+      "navigation": Navigation.t,
+      "screenProps": screenProps,
+    };
+
+    type contentComponent = React.component(contentComponentProps);
+
+    [@bs.module "react-navigation"]
+    external drawerItems: contentComponent = "DrawerItems";
+
+    type contentOptions;
+
+    [@bs.obj]
+    external contentOptions:
+      (
+        ~activeTintColor: string=?,
+        ~activeBackgroundColor: string=?,
+        ~inactiveTintColor: string=?,
+        ~inactiveBackgroundColor: string=?,
+        ~itemsContainerStyle: Style.t=?,
+        ~itemStyle: Style.t=?,
+        ~labelStyle: Style.t=?,
+        ~activeLabelStyle: Style.t=?,
+        ~inactiveLabelStyle: Style.t=?,
+        ~iconContainerStyle: Style.t=?,
+        // TODO: more props
+        unit
+      ) =>
+      contentOptions =
+      "";
+
+    type config;
+
+    [@bs.obj]
+    external config:
+      (
+        ~mode: [@bs.string] [ | `card | `modal]=?,
+        ~drawerWidth: float=?,
+        ~drawerPosition: [@bs.string] [ | `left | `right]=?,
+        ~contentComponent: contentComponent=?,
+        ~contentOptions: contentOptions=?,
+        ~useNativeAnimations: bool=?,
+        ~drawerBackgroundColor: string=?,
+        ~initialRouteName: string=?,
+        ~backBehavior: [@bs.string] [ | `initialRoute | `none]=?,
+        ~hideStatusBar: bool=?,
+        // TODO: more props
+        unit
+      ) =>
+      config =
+      "";
+
+    [@bs.module "react-navigation"]
+    external make: Js.t('a) => navigator = "createDrawerNavigator";
+
+    [@bs.module "react-navigation"]
+    external makeWithConfig: (Js.t('a), config) => navigator =
+      "createDrawerNavigator";
+  };
+
+  module TabNavigator = {
+    type tabBarOptions;
+
+    [@bs.obj]
+    external tabBarOptions:
+      (
+        ~activeTintColor: string=?,
+        ~inactiveTintColor: string=?,
+        ~showIcon: bool=?,
+        ~showLabel: bool=?,
+        ~upperCaseLabel: bool=?,
+        ~pressColor: string=?,
+        ~pressOpacity: float=?,
+        ~scrollEnabled: bool=?,
+        ~tabStyle: Style.t=?,
+        ~indicatorStyle: Style.t=?,
+        ~labelStyle: Style.t=?,
+        ~iconStyle: Style.t=?,
+        ~style: Style.t=?,
+        ~allowFontScaling: bool=?,
+        // TODO: more props
+        unit
+      ) =>
+      tabBarOptions =
+      "";
+
+    type config;
+
+    [@bs.obj]
+    external config:
+      (
+        ~backBehavior: [@bs.string] [ | `initialRoute | `order | `history]=?,
+        ~swipeEnabled: bool=?,
+        ~animationEnabled: bool=?,
+        ~_lazy: bool=?,
+        ~tabBarOptions: tabBarOptions=?,
+        // TODO: more props
+        unit
+      ) =>
+      config =
+      "";
+
+    [@bs.module "react-navigation"]
+    external makeMaterialTopNavigator: Js.t('a) => navigator =
+      "createMaterialTopTabNavigator";
+
+    [@bs.module "react-navigation"]
+    external makeMaterialTopNavigatorWithConfig:
+      (Js.t('a), config) => navigator =
+      "createMaterialTopTabNavigator";
+  };
+
+  module NavigationOptions = {
     [@bs.deriving {abstract: light}]
     type t = {
       [@bs.optional]
-      mode: string, /* "card" or "modal" */
+      title: string,
+      /* header: option [ | `custom (headerProps => React.element) | `notVisible], */
       [@bs.optional]
-      headerMode: string /* float|screen|none */
-      /* TODO: further props */
+      headerTitle: React.element,
+      [@bs.optional]
+      headerTitleStyle: Style.t,
+      [@bs.optional]
+      headerTintColor: string,
+      [@bs.optional]
+      headerBackTitle: Js.Nullable.t(string),
+      [@bs.optional]
+      headerTruncatedBackTitle: string,
+      [@bs.optional]
+      headerLeft: React.element,
+      [@bs.optional]
+      headerBackTitleStyle: Style.t,
+      [@bs.optional]
+      headerPressColorAndroid: string,
+      [@bs.optional]
+      headerRight: React.element,
+      [@bs.optional]
+      headerStyle: Style.t,
+      [@bs.optional]
+      gesturesEnabled: bool,
+      /* Drawer Navigator */
+      [@bs.optional]
+      drawerIcon: React.element,
+      [@bs.optional]
+      drawerLabel: string,
+      /* {
+           .
+           "focused": bool,
+           "tintColor": string,
+         } =>
+         React.element, */
+      [@bs.optional]
+      drawerLockMode: string /* unlocked | locked-closed | locked-open */
     };
   };
 
-  [@bs.module "react-navigation"]
-  external make: Js.t('a) => navigator = "createStackNavigator";
+  type navigationParams = {
+    .
+    "navigation": Navigation.t,
+    "navigationOptions": NavigationOptions.t,
+    "screenProps": screenProps,
+  };
 
-  [@bs.module "react-navigation"]
-  external makeWithConfig: (Js.t('a), Config.t) => navigator =
-    "createStackNavigator";
-};
+  type persistNavigationState = navigationState => Js.Promise.t(unit);
+  type loadNavigationState = unit => Js.Promise.t(option(navigationState));
 
-module DrawerNavigator = {
-  module ContentComponent = {
-    [@bs.deriving {abstract: light}]
-    type props('screenProps) = {
-      navigation: Navigation.t,
-      screenProps: 'screenProps,
-    };
+  type appContainerProps = {
+    .
+    "persistNavigationState": option(persistNavigationState),
+    "loadNavigationState": option(loadNavigationState),
+    "screenProps": option(screenProps),
+    "setNavigatorRef": Js.Nullable.t(NavigationContainer.t) => unit,
+  };
 
-    type t('screenProps) = React.component(props('screenProps));
+  module type AppContainer = {
+    [@react.component]
+    let make:
+      (
+        ~persistNavigationState: persistNavigationState=?,
+        ~loadNavigationState: loadNavigationState=?,
+        ~screenProps: screenProps=?,
+        ~setNavigatorRef: Js.Nullable.t(NavigationContainer.t) => unit
+      ) =>
+      React.element;
   };
 
   [@bs.module "react-navigation"]
-  external drawerItems: ContentComponent.t('screenProps) = "DrawerItems";
+  external _createAppContainer:
+    navigator => React.component(appContainerProps) =
+    "createAppContainer";
 
-  module Config = {
-    module ContentOptions = {
-      [@bs.deriving {abstract: light}]
-      type t = {
-        [@bs.optional]
-        activeTintColor: string,
-        [@bs.optional]
-        activeBackgroundColor: string,
-        [@bs.optional]
-        inactiveTintColor: string,
-        [@bs.optional]
-        inactiveBackgroundColor: string,
-        /* onItemPress(route) - function to be invoked when an item is pressed */
-        [@bs.optional]
-        itemsContainerStyle: Style.t,
-        [@bs.optional]
-        itemStyle: Style.t,
-        [@bs.optional]
-        labelStyle: Style.t,
-        [@bs.optional]
-        activeLabelStyle: Style.t,
-        [@bs.optional]
-        inactiveLabelStyle: Style.t,
-        [@bs.optional]
-        iconContainerStyle: Style.t,
-      };
-    };
+  let makeAppContainer = (navigator: navigator): (module AppContainer) => {
+    let make = _createAppContainer(navigator);
 
-    [@bs.deriving {abstract: light}]
-    type t('screenProps) = {
-      [@bs.optional]
-      drawerWidth: float,
-      [@bs.optional]
-      drawerPosition: string, /* "left" or "right" */
-      [@bs.optional]
-      contentComponent: ContentComponent.t('screenProps),
-      [@bs.optional]
-      contentOptions: ContentOptions.t,
-      [@bs.optional]
-      useNativeAnimations: bool,
-      [@bs.optional]
-      drawerBackgroundColor: string,
-      [@bs.optional]
-      initialRouteName: string,
-      /* [@bs.optional]
-         paths: ??, */
-      [@bs.optional]
-      backBehavior: string /* "initialRoute" or "none" */
-    };
+    (module
+     {
+       [@bs.obj]
+       external makeProps:
+         (
+           ~persistNavigationState: persistNavigationState=?,
+           ~loadNavigationState: loadNavigationState=?,
+           ~screenProps: screenProps=?,
+           ~setNavigatorRef: Js.Nullable.t(NavigationContainer.t) => unit,
+           ~key: string=?,
+           unit
+         ) =>
+         appContainerProps =
+         "";
+
+       let make = make;
+     });
   };
 
-  [@bs.module "react-navigation"]
-  external make: Js.t('a) => navigator = "createDrawerNavigator";
-
-  [@bs.module "react-navigation"]
-  external makeWithConfig: (Js.t('a), Config.t('screenProps)) => navigator =
-    "createDrawerNavigator";
+  [@bs.set]
+  external setNavigationOptions:
+    (React.component('props), NavigationOptions.t) => unit =
+    "navigationOptions";
+  [@bs.set]
+  external setDynamicNavigationOptions:
+    (React.component('props), navigationParams => NavigationOptions.t) => unit =
+    "navigationOptions";
 };
-
-module TabNavigator = {
-  module TabBarOptions = {
-    [@bs.deriving {abstract: light}]
-    type t = {
-      [@bs.optional]
-      activeTintColor: string,
-      [@bs.optional]
-      inactiveTintColor: string,
-      [@bs.optional]
-      showIcon: bool,
-      [@bs.optional]
-      showLabel: bool,
-      [@bs.optional]
-      upperCaseLabel: bool,
-      [@bs.optional]
-      pressColor: string,
-      [@bs.optional]
-      pressOpacity: float,
-      [@bs.optional]
-      scrollEnabled: bool,
-      [@bs.optional]
-      tabStyle: Style.t,
-      [@bs.optional]
-      indicatorStyle: Style.t,
-      [@bs.optional]
-      labelStyle: Style.t,
-      [@bs.optional]
-      iconStyle: Style.t,
-      [@bs.optional]
-      style: Style.t,
-      [@bs.optional]
-      allowFontScaling: bool,
-    };
-  };
-
-  module Config = {
-    [@bs.deriving {abstract: light}]
-    type t = {
-      [@bs.optional]
-      backBehavior: string,
-      [@bs.optional]
-      swipeEnabled: bool,
-      [@bs.optional]
-      animationEnabled: bool,
-      [@bs.optional] [@bs.as "lazy"]
-      lazy_: bool,
-      [@bs.optional]
-      tabBarOptions: TabBarOptions.t,
-      /* TODO: more props */
-    };
-  };
-
-  [@bs.module "react-navigation"]
-  external makeMaterialTopNavigator: Js.t('a) => navigator =
-    "createMaterialTopTabNavigator";
-
-  [@bs.module "react-navigation"]
-  external makeMaterialTopNavigatorWithConfig:
-    (Js.t('a), Config.t) => navigator =
-    "createMaterialTopTabNavigator";
-};
-
-module NavigationOptions = {
-  [@bs.deriving {abstract: light}]
-  type t = {
-    [@bs.optional]
-    title: string,
-    /* header: option [ | `custom (headerProps => React.element) | `notVisible], */
-    [@bs.optional]
-    headerTitle: React.element,
-    [@bs.optional]
-    headerTitleStyle: Style.t,
-    [@bs.optional]
-    headerTintColor: string,
-    [@bs.optional]
-    headerBackTitle: Js.Nullable.t(string),
-    [@bs.optional]
-    headerTruncatedBackTitle: string,
-    [@bs.optional]
-    headerLeft: React.element,
-    [@bs.optional]
-    headerBackTitleStyle: Style.t,
-    [@bs.optional]
-    headerPressColorAndroid: string,
-    [@bs.optional]
-    headerRight: React.element,
-    [@bs.optional]
-    headerStyle: Style.t,
-    [@bs.optional]
-    gesturesEnabled: bool,
-    /* Drawer Navigator */
-    [@bs.optional]
-    drawerIcon: React.element,
-    [@bs.optional]
-    drawerLabel: string,
-    /* {
-         .
-         "focused": bool,
-         "tintColor": string,
-       } =>
-       React.element, */
-    [@bs.optional]
-    drawerLockMode: string /* unlocked | locked-closed | locked-open */
-  };
-};
-module NavigationParams = {
-  [@bs.deriving {abstract: light}]
-  type t('screenProps) = {
-    navigation: Navigation.t,
-    navigationOptions: NavigationOptions.t,
-    screenProps: 'screenProps,
-  };
-};
-
-module AppContainer = {
-  type props;
-
-  [@bs.module "react-navigation"]
-  external make: navigator => React.component(props) = "createAppContainer";
-};
-
-[@bs.set]
-external setNavigationOptions:
-  (React.component('props), NavigationOptions.t) => unit =
-  "navigationOptions";
-[@bs.set]
-external setDynamicNavigationOptions:
-  (React.component('props), NavigationParams.t('a) => NavigationOptions.t) =>
-  unit =
-  "navigationOptions";
