@@ -4,7 +4,7 @@
 
 ## Status
 
-WIP WIP WIP WIP
+Superseded by https://github.com/rescript-react-native/rescript-react-navigation.
 
 ## Example
 
